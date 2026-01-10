@@ -646,6 +646,117 @@ def prepare_data_for_lstm(
 
 
 # ============================================================
+# UNIVARIATE LSTM PREPROCESSING (Kaggle-style)
+# ============================================================
+
+def prepare_data_for_lstm_univariate(
+    filepath: str,
+    target_column: str = 'C6H6(GT)',
+    sequence_length: int = 24,
+    test_size: float = 0.15,
+    val_size: float = 0.15,
+    scaler_type: str = 'minmax',
+    random_state: int = 42
+) -> dict:
+    """
+    Prepare data for UNIVARIATE LSTM (Kaggle-style approach).
+    
+    This uses ONLY the target variable's history to predict future values.
+    This is the standard approach for time-series forecasting with LSTM.
+    
+    Key difference from multivariate:
+    - Input: past N values of target (e.g., past 24 hours of C6H6)
+    - Output: next value of target
+    - No other features used
+    
+    This approach is more suitable for LSTM because:
+    1. LSTM excels at learning temporal patterns in single sequences
+    2. Avoids confounding effects from highly correlated features
+    3. Pure time-series forecasting task
+    """
+    print("=" * 60)
+    print("PREPROCESSING FOR UNIVARIATE LSTM (Kaggle-style)")
+    print("=" * 60)
+    
+    # Step 1: Load and preprocess data
+    df = load_air_quality_data(filepath)
+    df = create_datetime_features(df)
+    df = handle_missing_values(df, strategy='interpolate')
+    
+    # Step 2: Extract ONLY the target variable
+    if target_column not in df.columns:
+        raise ValueError(f"Target column '{target_column}' not found")
+    
+    y = df[target_column].values.reshape(-1, 1)
+    print(f"[INFO] Using univariate approach: only {target_column}")
+    print(f"[INFO] Total samples: {len(y)}")
+    
+    # Step 3: Scale the data
+    if scaler_type == 'minmax':
+        scaler = MinMaxScaler(feature_range=(0, 1))
+    else:
+        scaler = StandardScaler()
+    
+    y_scaled = scaler.fit_transform(y)
+    
+    # Step 4: Split data (time-series order, no shuffle)
+    n_samples = len(y_scaled)
+    n_test = int(n_samples * test_size)
+    n_val = int(n_samples * val_size)
+    n_train = n_samples - n_test - n_val
+    
+    y_train = y_scaled[:n_train]
+    y_val = y_scaled[n_train:n_train + n_val]
+    y_test = y_scaled[n_train + n_val:]
+    
+    print(f"[INFO] Split: Train={len(y_train)}, Val={len(y_val)}, Test={len(y_test)}")
+    
+    # Step 5: Create sequences (univariate)
+    def create_univariate_sequences(data, seq_length):
+        X, y = [], []
+        for i in range(len(data) - seq_length):
+            X.append(data[i:(i + seq_length), 0])
+            y.append(data[i + seq_length, 0])
+        return np.array(X), np.array(y)
+    
+    X_train, y_train_seq = create_univariate_sequences(y_train, sequence_length)
+    X_val, y_val_seq = create_univariate_sequences(y_val, sequence_length)
+    X_test, y_test_seq = create_univariate_sequences(y_test, sequence_length)
+    
+    # Reshape for LSTM: (samples, timesteps, features=1)
+    X_train = X_train.reshape((X_train.shape[0], X_train.shape[1], 1))
+    X_val = X_val.reshape((X_val.shape[0], X_val.shape[1], 1))
+    X_test = X_test.reshape((X_test.shape[0], X_test.shape[1], 1))
+    
+    print(f"[INFO] Sequences created:")
+    print(f"       X_train: {X_train.shape}, y_train: {y_train_seq.shape}")
+    print(f"       X_val: {X_val.shape}, y_val: {y_val_seq.shape}")
+    print(f"       X_test: {X_test.shape}, y_test: {y_test_seq.shape}")
+    
+    print("=" * 60)
+    print("UNIVARIATE PREPROCESSING COMPLETE")
+    print("=" * 60)
+    
+    return {
+        'X_train': X_train,
+        'X_val': X_val,
+        'X_test': X_test,
+        'y_train': y_train_seq,
+        'y_val': y_val_seq,
+        'y_test': y_test_seq,
+        'target_scaler': scaler,
+        'feature_scaler': scaler,  # Same scaler for compatibility
+        'feature_names': [target_column],
+        'sequence_length': sequence_length,
+        'n_features': 1,
+        'n_train': X_train.shape[0],
+        'n_val': X_val.shape[0],
+        'n_test': X_test.shape[0],
+        'univariate': True
+    }
+
+
+# ============================================================
 # UTILITY FUNCTIONS
 # ============================================================
 

@@ -76,6 +76,22 @@ def get_all_model_results():
             }
         }
     
+    # Fuzzy Inference System
+    fuzzy = load_json_results('fuzzy_results.json')
+    if fuzzy:
+        results['fuzzy'] = {
+            'name': 'Fuzzy FIS',
+            'type': 'Mamdani Fuzzy Inference System',
+            'metrics': fuzzy['metrics']['test'],
+            'training_time': fuzzy['inference_time'],
+            'config': fuzzy['model_config'],
+            'rules': fuzzy.get('rules', []),
+            'predictions': {
+                'actual': fuzzy['predictions']['test_actual'][-100:],
+                'predicted': fuzzy['predictions']['test_predicted'][-100:]
+            }
+        }
+    
     return results
 
 

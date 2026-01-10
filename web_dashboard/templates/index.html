@@ -97,6 +97,12 @@
                     <p>Genetic Algorithm optimizes ANN hyperparameters globally, while ANN 
                     learns the prediction task. Demonstrates hybrid CI approach.</p>
                 </div>
+                <div class="discussion-card">
+                    <h3>Fuzzy FIS</h3>
+                    <p><strong>CI Paradigm:</strong> Fuzzy Systems</p>
+                    <p>Mamdani-type Fuzzy Inference System uses IF-THEN rules for interpretable
+                    predictions. Demonstrates knowledge-based reasoning vs. data-driven learning.</p>
+                </div>
             </div>
         </section>
     </main>
@@ -205,7 +211,7 @@
                 });
             }
 
-            const colors = { 'ann': '#3498db', 'lstm': '#2ecc71', 'ga_ann': '#e74c3c' };
+            const colors = { 'ann': '#3498db', 'lstm': '#2ecc71', 'ga_ann': '#e74c3c', 'fuzzy': '#9b59b6' };
             
             for (let key in data) {
                 if (data[key].predictions) {
