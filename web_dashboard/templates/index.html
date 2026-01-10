@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Quality Prediction Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>🌍 Air Quality Prediction Dashboard</h1>
+        <p class="subtitle">TCI6313 Computational Intelligence Project</p>
+    </header>
+
+    <main>
+        <!-- Model Comparison Section -->
+        <section class="section">
+            <h2>📊 Model Performance Comparison</h2>
+            <div class="metrics-grid">
+                {% for key, model in results.items() %}
+                <div class="metric-card {{ key }}">
+                    <h3>{{ model.name }}</h3>
+                    <p class="model-type">{{ model.type }}</p>
+                    <div class="metric-values">
+                        <div class="metric">
+                            <span class="label">RMSE</span>
+                            <span class="value">{{ "%.4f"|format(model.metrics.rmse) }}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">MAE</span>
+                            <span class="value">{{ "%.4f"|format(model.metrics.mae) }}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">R²</span>
+                            <span class="value">{{ "%.4f"|format(model.metrics.r2) }}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Time</span>
+                            <span class="value">{{ "%.1f"|format(model.training_time) }}s</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="section">
+            <h2>📈 Performance Visualization</h2>
+            <div class="charts-container">
+                <div id="metrics-chart" class="chart"></div>
+                <div id="time-chart" class="chart"></div>
+            </div>
+        </section>
+
+        <!-- Predictions Section -->
+        <section class="section">
+            <h2>🔮 Predictions Comparison</h2>
+            <div class="chart-full">
+                <div id="predictions-chart"></div>
+            </div>
+        </section>
+
+        <!-- Model Details Section -->
+        <section class="section">
+            <h2>🔧 Model Configurations</h2>
+            <div class="config-grid">
+                {% for key, model in results.items() %}
+                <div class="config-card">
+                    <h3>{{ model.name }}</h3>
+                    <pre>{{ model.config | tojson(indent=2) }}</pre>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- CI Discussion Section -->
+        <section class="section discussion">
+            <h2>🎓 Computational Intelligence Analysis</h2>
+            <div class="discussion-grid">
+                <div class="discussion-card">
+                    <h3>ANN Baseline</h3>
+                    <p><strong>CI Paradigm:</strong> Neural Networks</p>
+                    <p>Feedforward architecture learns non-linear mappings from input features 
+                    to benzene concentration. Simple but effective baseline.</p>
+                </div>
+                <div class="discussion-card">
+                    <h3>LSTM Model</h3>
+                    <p><strong>CI Paradigm:</strong> Neural Networks (Recurrent)</p>
+                    <p>Long Short-Term Memory captures temporal dependencies in air quality 
+                    data. Uses 24-hour sequences to learn daily patterns.</p>
+                </div>
+                <div class="discussion-card">
+                    <h3>GA-ANN Hybrid</h3>
+                    <p><strong>CI Paradigm:</strong> Evolutionary Computation + Neural Networks</p>
+                    <p>Genetic Algorithm optimizes ANN hyperparameters globally, while ANN 
+                    learns the prediction task. Demonstrates hybrid CI approach.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>TCI6313 Computational Intelligence | Air Quality Prediction Project</p>
+        <p>Data Source: UCI Machine Learning Repository</p>
+    </footer>
+
+    <script>
+        // Fetch data and create charts
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/comparison')
+                .then(response => response.json())
+                .then(data => {
+                    createMetricsChart(data);
+                    createTimeChart(data);
+                });
+            
+            fetch('/api/results')
+                .then(response => response.json())
+                .then(data => {
+                    createPredictionsChart(data);
+                });
+        });
+
+        function createMetricsChart(data) {
+            const models = data.map(d => d.model);
+            const rmse = data.map(d => d.rmse);
+            const mae = data.map(d => d.mae);
+            const r2 = data.map(d => d.r2);
+
+            const trace1 = {
+                x: models,
+                y: rmse,
+                name: 'RMSE',
+                type: 'bar',
+                marker: { color: '#e74c3c' }
+            };
+
+            const trace2 = {
+                x: models,
+                y: mae,
+                name: 'MAE',
+                type: 'bar',
+                marker: { color: '#3498db' }
+            };
+
+            const layout = {
+                title: 'Model Error Metrics (Lower is Better)',
+                barmode: 'group',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#333' }
+            };
+
+            Plotly.newPlot('metrics-chart', [trace1, trace2], layout);
+        }
+
+        function createTimeChart(data) {
+            const models = data.map(d => d.model);
+            const times = data.map(d => d.time);
+
+            const trace = {
+                x: models,
+                y: times,
+                type: 'bar',
+                marker: { 
+                    color: ['#3498db', '#2ecc71', '#e74c3c'],
+                    opacity: 0.8
+                },
+                text: times.map(t => t.toFixed(1) + 's'),
+                textposition: 'outside'
+            };
+
+            const layout = {
+                title: 'Training Time Comparison',
+                yaxis: { title: 'Time (seconds)' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#333' }
+            };
+
+            Plotly.newPlot('time-chart', [trace], layout);
+        }
+
+        function createPredictionsChart(data) {
+            const traces = [];
+            let actual = null;
+
+            // Get actual values from first available model
+            for (let key in data) {
+                if (data[key].predictions) {
+                    actual = data[key].predictions.actual;
+                    break;
+                }
+            }
+
+            if (actual) {
+                traces.push({
+                    y: actual,
+                    name: 'Actual',
+                    type: 'scatter',
+                    mode: 'lines',
+                    line: { color: '#333', width: 2 }
+                });
+            }
+
+            const colors = { 'ann': '#3498db', 'lstm': '#2ecc71', 'ga_ann': '#e74c3c' };
+            
+            for (let key in data) {
+                if (data[key].predictions) {
+                    traces.push({
+                        y: data[key].predictions.predicted,
+                        name: data[key].name + ' (Predicted)',
+                        type: 'scatter',
+                        mode: 'lines',
+                        line: { color: colors[key] || '#999', dash: 'dot', width: 1.5 },
+                        opacity: 0.8
+                    });
+                }
+            }
+
+            const layout = {
+                title: 'Model Predictions vs Actual Values (Last 100 samples)',
+                xaxis: { title: 'Time Step' },
+                yaxis: { title: 'C6H6 Concentration (µg/m³)' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#333' },
+                legend: { orientation: 'h', y: -0.2 }
+            };
+
+            Plotly.newPlot('predictions-chart', traces, layout);
+        }
+    </script>
+</body>
+</html>
