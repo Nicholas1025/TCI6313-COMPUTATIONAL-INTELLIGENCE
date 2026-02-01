@@ -1,18 +1,5 @@
 """
-fuzzy_model.py - Fuzzy Inference System for Air Quality Prediction
-
-This module implements a Mamdani-type Fuzzy Inference System (FIS)
-for interpretable air quality prediction.
-
-CI Paradigm: Fuzzy Systems
-Role: Interpretable baseline / rule-based reasoning contrast to learning-based models
-
-The FIS uses linguistic variables and IF-THEN rules to provide
-human-understandable predictions, demonstrating an alternative CI approach
-to neural network-based methods.
-
-Author: TCI6313 Student
-Date: 2026
+Mamdani Fuzzy Inference System for air quality prediction.
 """
 
 import numpy as np
@@ -25,29 +12,13 @@ warnings.filterwarnings('ignore')
 
 
 class TriangularMF:
-    """
-    Triangular Membership Function.
-    
-    Parameters:
-    -----------
-    a : float
-        Left foot of the triangle (membership = 0)
-    b : float
-        Peak of the triangle (membership = 1)
-    c : float
-        Right foot of the triangle (membership = 0)
-    label : str
-        Linguistic label (e.g., 'Low', 'Medium', 'High')
-    """
+    """Triangular membership function."""
     
     def __init__(self, a: float, b: float, c: float, label: str):
-        self.a = a
-        self.b = b
-        self.c = c
+        self.a, self.b, self.c = a, b, c
         self.label = label
     
     def __call__(self, x: np.ndarray) -> np.ndarray:
-        """Calculate membership degree for input x."""
         x = np.asarray(x)
         return np.maximum(0, np.minimum((x - self.a) / (self.b - self.a + 1e-10),
                                          (self.c - x) / (self.c - self.b + 1e-10)))
@@ -57,32 +28,13 @@ class TriangularMF:
 
 
 class TrapezoidalMF:
-    """
-    Trapezoidal Membership Function.
-    
-    Parameters:
-    -----------
-    a : float
-        Left foot
-    b : float
-        Left shoulder
-    c : float
-        Right shoulder
-    d : float
-        Right foot
-    label : str
-        Linguistic label
-    """
+    """Trapezoidal membership function."""
     
     def __init__(self, a: float, b: float, c: float, d: float, label: str):
-        self.a = a
-        self.b = b
-        self.c = c
-        self.d = d
+        self.a, self.b, self.c, self.d = a, b, c, d
         self.label = label
     
     def __call__(self, x: np.ndarray) -> np.ndarray:
-        """Calculate membership degree for input x."""
         x = np.asarray(x)
         return np.maximum(0, np.minimum(
             np.minimum((x - self.a) / (self.b - self.a + 1e-10), 1),
@@ -94,31 +46,17 @@ class TrapezoidalMF:
 
 
 class LinguisticVariable:
-    """
-    A linguistic variable with associated membership functions.
+    """Linguistic variable with membership functions."""
     
-    Parameters:
-    -----------
-    name : str
-        Variable name (e.g., 'CO', 'NO2', 'C6H6')
-    universe : Tuple[float, float]
-        Range of the variable [min, max]
-    mfs : Dict[str, callable]
-        Dictionary of membership functions {label: MF}
-    """
-    
-    def __init__(self, name: str, universe: Tuple[float, float], 
-                 mfs: Dict[str, callable] = None):
+    def __init__(self, name: str, universe: Tuple[float, float], mfs: Dict[str, callable] = None):
         self.name = name
         self.universe = universe
         self.mfs = mfs or {}
     
     def add_mf(self, label: str, mf: callable):
-        """Add a membership function."""
         self.mfs[label] = mf
     
     def fuzzify(self, x: float) -> Dict[str, float]:
-        """Fuzzify a crisp value to membership degrees."""
         return {label: float(mf(x)) for label, mf in self.mfs.items()}
     
     def __repr__(self):
@@ -126,22 +64,9 @@ class LinguisticVariable:
 
 
 class FuzzyRule:
-    """
-    A fuzzy IF-THEN rule.
+    """Fuzzy IF-THEN rule."""
     
-    Parameters:
-    -----------
-    antecedent : Dict[str, str]
-        Dictionary of {variable_name: linguistic_term}
-    consequent : Tuple[str, str]
-        (output_variable_name, linguistic_term)
-    weight : float
-        Rule weight (default 1.0)
-    """
-    
-    def __init__(self, antecedent: Dict[str, str], 
-                 consequent: Tuple[str, str], 
-                 weight: float = 1.0):
+    def __init__(self, antecedent: Dict[str, str], consequent: Tuple[str, str], weight: float = 1.0):
         self.antecedent = antecedent
         self.consequent = consequent
         self.weight = weight
@@ -152,20 +77,7 @@ class FuzzyRule:
 
 
 class MamdaniFIS:
-    """
-    Mamdani-type Fuzzy Inference System.
-    
-    This implements the classic Mamdani FIS with:
-    - Fuzzification of inputs
-    - Rule evaluation using min (AND) operator
-    - Aggregation using max operator
-    - Centroid defuzzification
-    
-    Parameters:
-    -----------
-    name : str
-        Name of the fuzzy system
-    """
+    """Mamdani-type Fuzzy Inference System."""
     
     def __init__(self, name: str = "FuzzySystem"):
         self.name = name
@@ -175,91 +87,50 @@ class MamdaniFIS:
         self.inference_time = 0.0
     
     def add_input(self, variable: LinguisticVariable):
-        """Add an input linguistic variable."""
         self.input_variables[variable.name] = variable
     
     def set_output(self, variable: LinguisticVariable):
-        """Set the output linguistic variable."""
         self.output_variable = variable
     
     def add_rule(self, rule: FuzzyRule):
-        """Add a fuzzy rule."""
         self.rules.append(rule)
     
     def fuzzify_inputs(self, inputs: Dict[str, float]) -> Dict[str, Dict[str, float]]:
-        """Fuzzify all input values."""
         fuzzified = {}
         for var_name, value in inputs.items():
             if var_name in self.input_variables:
                 fuzzified[var_name] = self.input_variables[var_name].fuzzify(value)
         return fuzzified
     
-    def evaluate_rule(self, rule: FuzzyRule, 
-                      fuzzified_inputs: Dict[str, Dict[str, float]]) -> float:
-        """
-        Evaluate a single rule using min (AND) operator.
-        Returns the firing strength of the rule.
-        """
+    def evaluate_rule(self, rule: FuzzyRule, fuzzified_inputs: Dict[str, Dict[str, float]]) -> float:
+        """Evaluate rule using min (AND) operator."""
         firing_strength = 1.0
-        
         for var_name, term in rule.antecedent.items():
             if var_name in fuzzified_inputs:
                 membership = fuzzified_inputs[var_name].get(term, 0.0)
                 firing_strength = min(firing_strength, membership)
-        
         return firing_strength * rule.weight
     
-    def aggregate(self, output_universe: np.ndarray, 
-                  rule_outputs: List[Tuple[float, str]]) -> np.ndarray:
-        """
-        Aggregate all rule outputs using max operator.
-        Returns the aggregated membership function.
-        """
+    def aggregate(self, output_universe: np.ndarray, rule_outputs: List[Tuple[float, str]]) -> np.ndarray:
+        """Aggregate rule outputs using max operator."""
         aggregated = np.zeros_like(output_universe)
-        
         for firing_strength, output_term in rule_outputs:
             if firing_strength > 0 and output_term in self.output_variable.mfs:
                 mf = self.output_variable.mfs[output_term]
-                # Clip the output MF at firing strength level (Mamdani implication)
                 clipped = np.minimum(mf(output_universe), firing_strength)
-                # Aggregate using max
                 aggregated = np.maximum(aggregated, clipped)
-        
         return aggregated
     
-    def defuzzify_centroid(self, universe: np.ndarray, 
-                           aggregated: np.ndarray) -> float:
-        """
-        Defuzzify using centroid method.
-        Returns crisp output value.
-        """
+    def defuzzify_centroid(self, universe: np.ndarray, aggregated: np.ndarray) -> float:
+        """Centroid defuzzification."""
         if np.sum(aggregated) == 0:
-            # No rules fired, return center of universe
             return np.mean(universe)
-        
         return np.sum(universe * aggregated) / np.sum(aggregated)
     
-    def infer(self, inputs: Dict[str, float], 
-              resolution: int = 1000) -> Tuple[float, Dict]:
-        """
-        Perform fuzzy inference.
-        
-        Parameters:
-        -----------
-        inputs : Dict[str, float]
-            Dictionary of input values {variable_name: value}
-        resolution : int
-            Number of points for output universe discretization
-            
-        Returns:
-        --------
-        Tuple[float, Dict]
-            (defuzzified_output, inference_details)
-        """
-        # Fuzzify inputs
+    def infer(self, inputs: Dict[str, float], resolution: int = 1000) -> Tuple[float, Dict]:
+        """Perform fuzzy inference."""
         fuzzified = self.fuzzify_inputs(inputs)
         
-        # Evaluate all rules
         rule_outputs = []
         rule_details = []
         
@@ -272,17 +143,13 @@ class MamdaniFIS:
                 'output_term': rule.consequent[1]
             })
         
-        # Create output universe
         output_universe = np.linspace(
             self.output_variable.universe[0],
             self.output_variable.universe[1],
             resolution
         )
         
-        # Aggregate
         aggregated = self.aggregate(output_universe, rule_outputs)
-        
-        # Defuzzify
         output = self.defuzzify_centroid(output_universe, aggregated)
         
         return output, {
@@ -292,25 +159,8 @@ class MamdaniFIS:
             'output_universe': output_universe.tolist()
         }
     
-    def predict(self, X: np.ndarray, input_names: List[str] = None,
-                verbose: bool = False) -> np.ndarray:
-        """
-        Predict for multiple samples.
-        
-        Parameters:
-        -----------
-        X : np.ndarray
-            Input array of shape (n_samples, n_features)
-        input_names : List[str]
-            Names of input features (must match input variables)
-        verbose : bool
-            Print progress
-            
-        Returns:
-        --------
-        np.ndarray
-            Predictions of shape (n_samples,)
-        """
+    def predict(self, X: np.ndarray, input_names: List[str] = None, verbose: bool = False) -> np.ndarray:
+        """Predict for multiple samples."""
         if input_names is None:
             input_names = list(self.input_variables.keys())
         
@@ -323,185 +173,86 @@ class MamdaniFIS:
             predictions[i], _ = self.infer(inputs)
             
             if verbose and (i + 1) % 100 == 0:
-                print(f"  Processed {i + 1}/{n_samples} samples...")
+                print(f"  Processed {i + 1}/{n_samples}...")
         
         self.inference_time = time.time() - start_time
-        
         if verbose:
-            print(f"  Inference completed in {self.inference_time:.2f} seconds")
+            print(f"  Inference completed in {self.inference_time:.2f}s")
         
         return predictions
     
     def summary(self) -> str:
-        """Return a summary of the fuzzy system."""
-        lines = [
-            "=" * 60,
-            f"FUZZY INFERENCE SYSTEM: {self.name}",
-            "=" * 60,
-            "",
-            "INPUT VARIABLES:",
-            "-" * 40
-        ]
+        lines = ["=" * 60, f"FUZZY SYSTEM: {self.name}", "=" * 60, "", "INPUT VARIABLES:", "-" * 40]
         
         for name, var in self.input_variables.items():
-            lines.append(f"  {name}:")
-            lines.append(f"    Universe: {var.universe}")
-            lines.append(f"    Terms: {list(var.mfs.keys())}")
+            lines.append(f"  {name}: {var.universe}, Terms: {list(var.mfs.keys())}")
         
-        lines.extend([
-            "",
-            "OUTPUT VARIABLE:",
-            "-" * 40,
-            f"  {self.output_variable.name}:",
-            f"    Universe: {self.output_variable.universe}",
-            f"    Terms: {list(self.output_variable.mfs.keys())}",
-            "",
-            "RULES:",
-            "-" * 40
-        ])
+        lines.extend(["", "OUTPUT VARIABLE:", "-" * 40,
+            f"  {self.output_variable.name}: {self.output_variable.universe}",
+            f"  Terms: {list(self.output_variable.mfs.keys())}",
+            "", "RULES:", "-" * 40])
         
         for i, rule in enumerate(self.rules, 1):
             lines.append(f"  R{i}: {rule}")
         
-        lines.extend([
-            "",
-            "=" * 60
-        ])
-        
+        lines.extend(["", "=" * 60])
         return "\n".join(lines)
 
 
 def create_air_quality_fis(data_stats: Dict = None) -> MamdaniFIS:
-    """
-    Create a Fuzzy Inference System for Air Quality (C6H6) prediction.
-    
-    This FIS uses CO and NO2 as inputs to predict C6H6 concentration,
-    demonstrating rule-based reasoning for air quality assessment.
-    
-    Parameters:
-    -----------
-    data_stats : Dict
-        Statistics of the data for setting universe bounds
-        Expected keys: 'CO_min', 'CO_max', 'NO2_min', 'NO2_max', 'C6H6_min', 'C6H6_max'
-        
-    Returns:
-    --------
-    MamdaniFIS
-        Configured fuzzy inference system
-    """
-    # Default statistics (typical ranges from UCI Air Quality dataset)
+    """Create FIS for C6H6 prediction using CO and NO2."""
     if data_stats is None:
         data_stats = {
-            'CO_min': 0.0, 'CO_max': 12.0,      # mg/m³
-            'NO2_min': 0.0, 'NO2_max': 350.0,   # µg/m³
-            'C6H6_min': 0.0, 'C6H6_max': 65.0   # µg/m³
+            'CO_min': 0.0, 'CO_max': 12.0,
+            'NO2_min': 0.0, 'NO2_max': 350.0,
+            'C6H6_min': 0.0, 'C6H6_max': 65.0
         }
     
-    # Create FIS
     fis = MamdaniFIS("AirQuality_C6H6_Predictor")
     
-    # ========================================
-    # INPUT 1: CO (Carbon Monoxide)
-    # ========================================
+    # CO input
     co_min, co_max = data_stats['CO_min'], data_stats['CO_max']
     co_range = co_max - co_min
-    
     co_var = LinguisticVariable("CO", (co_min, co_max))
-    co_var.add_mf("Low", TriangularMF(
-        co_min, co_min, co_min + 0.4 * co_range, "Low"))
-    co_var.add_mf("Medium", TriangularMF(
-        co_min + 0.2 * co_range, co_min + 0.5 * co_range, co_min + 0.8 * co_range, "Medium"))
-    co_var.add_mf("High", TriangularMF(
-        co_min + 0.6 * co_range, co_max, co_max, "High"))
+    co_var.add_mf("Low", TriangularMF(co_min, co_min, co_min + 0.4 * co_range, "Low"))
+    co_var.add_mf("Medium", TriangularMF(co_min + 0.2 * co_range, co_min + 0.5 * co_range, co_min + 0.8 * co_range, "Medium"))
+    co_var.add_mf("High", TriangularMF(co_min + 0.6 * co_range, co_max, co_max, "High"))
     fis.add_input(co_var)
     
-    # ========================================
-    # INPUT 2: NO2 (Nitrogen Dioxide)
-    # ========================================
+    # NO2 input
     no2_min, no2_max = data_stats['NO2_min'], data_stats['NO2_max']
     no2_range = no2_max - no2_min
-    
     no2_var = LinguisticVariable("NO2", (no2_min, no2_max))
-    no2_var.add_mf("Low", TriangularMF(
-        no2_min, no2_min, no2_min + 0.4 * no2_range, "Low"))
-    no2_var.add_mf("Medium", TriangularMF(
-        no2_min + 0.2 * no2_range, no2_min + 0.5 * no2_range, no2_min + 0.8 * no2_range, "Medium"))
-    no2_var.add_mf("High", TriangularMF(
-        no2_min + 0.6 * no2_range, no2_max, no2_max, "High"))
+    no2_var.add_mf("Low", TriangularMF(no2_min, no2_min, no2_min + 0.4 * no2_range, "Low"))
+    no2_var.add_mf("Medium", TriangularMF(no2_min + 0.2 * no2_range, no2_min + 0.5 * no2_range, no2_min + 0.8 * no2_range, "Medium"))
+    no2_var.add_mf("High", TriangularMF(no2_min + 0.6 * no2_range, no2_max, no2_max, "High"))
     fis.add_input(no2_var)
     
-    # ========================================
-    # OUTPUT: C6H6 (Benzene)
-    # ========================================
+    # C6H6 output
     c6h6_min, c6h6_max = data_stats['C6H6_min'], data_stats['C6H6_max']
     c6h6_range = c6h6_max - c6h6_min
-    
     c6h6_var = LinguisticVariable("C6H6", (c6h6_min, c6h6_max))
-    c6h6_var.add_mf("Low", TriangularMF(
-        c6h6_min, c6h6_min, c6h6_min + 0.35 * c6h6_range, "Low"))
-    c6h6_var.add_mf("Medium", TriangularMF(
-        c6h6_min + 0.15 * c6h6_range, c6h6_min + 0.5 * c6h6_range, c6h6_min + 0.85 * c6h6_range, "Medium"))
-    c6h6_var.add_mf("High", TriangularMF(
-        c6h6_min + 0.65 * c6h6_range, c6h6_max, c6h6_max, "High"))
+    c6h6_var.add_mf("Low", TriangularMF(c6h6_min, c6h6_min, c6h6_min + 0.35 * c6h6_range, "Low"))
+    c6h6_var.add_mf("Medium", TriangularMF(c6h6_min + 0.15 * c6h6_range, c6h6_min + 0.5 * c6h6_range, c6h6_min + 0.85 * c6h6_range, "Medium"))
+    c6h6_var.add_mf("High", TriangularMF(c6h6_min + 0.65 * c6h6_range, c6h6_max, c6h6_max, "High"))
     fis.set_output(c6h6_var)
     
-    # ========================================
-    # FUZZY RULES (9 rules - complete rule base)
-    # ========================================
-    # These rules capture the domain knowledge:
-    # - High CO and NO2 typically indicate traffic/combustion → High C6H6
-    # - Low pollutants → Low benzene
-    
-    # Rule 1: IF CO is Low AND NO2 is Low THEN C6H6 is Low
-    fis.add_rule(FuzzyRule(
-        {"CO": "Low", "NO2": "Low"}, ("C6H6", "Low")))
-    
-    # Rule 2: IF CO is Low AND NO2 is Medium THEN C6H6 is Low
-    fis.add_rule(FuzzyRule(
-        {"CO": "Low", "NO2": "Medium"}, ("C6H6", "Low")))
-    
-    # Rule 3: IF CO is Low AND NO2 is High THEN C6H6 is Medium
-    fis.add_rule(FuzzyRule(
-        {"CO": "Low", "NO2": "High"}, ("C6H6", "Medium")))
-    
-    # Rule 4: IF CO is Medium AND NO2 is Low THEN C6H6 is Low
-    fis.add_rule(FuzzyRule(
-        {"CO": "Medium", "NO2": "Low"}, ("C6H6", "Low")))
-    
-    # Rule 5: IF CO is Medium AND NO2 is Medium THEN C6H6 is Medium
-    fis.add_rule(FuzzyRule(
-        {"CO": "Medium", "NO2": "Medium"}, ("C6H6", "Medium")))
-    
-    # Rule 6: IF CO is Medium AND NO2 is High THEN C6H6 is High
-    fis.add_rule(FuzzyRule(
-        {"CO": "Medium", "NO2": "High"}, ("C6H6", "High")))
-    
-    # Rule 7: IF CO is High AND NO2 is Low THEN C6H6 is Medium
-    fis.add_rule(FuzzyRule(
-        {"CO": "High", "NO2": "Low"}, ("C6H6", "Medium")))
-    
-    # Rule 8: IF CO is High AND NO2 is Medium THEN C6H6 is High
-    fis.add_rule(FuzzyRule(
-        {"CO": "High", "NO2": "Medium"}, ("C6H6", "High")))
-    
-    # Rule 9: IF CO is High AND NO2 is High THEN C6H6 is High
-    fis.add_rule(FuzzyRule(
-        {"CO": "High", "NO2": "High"}, ("C6H6", "High")))
+    # 9 fuzzy rules
+    fis.add_rule(FuzzyRule({"CO": "Low", "NO2": "Low"}, ("C6H6", "Low")))
+    fis.add_rule(FuzzyRule({"CO": "Low", "NO2": "Medium"}, ("C6H6", "Low")))
+    fis.add_rule(FuzzyRule({"CO": "Low", "NO2": "High"}, ("C6H6", "Medium")))
+    fis.add_rule(FuzzyRule({"CO": "Medium", "NO2": "Low"}, ("C6H6", "Low")))
+    fis.add_rule(FuzzyRule({"CO": "Medium", "NO2": "Medium"}, ("C6H6", "Medium")))
+    fis.add_rule(FuzzyRule({"CO": "Medium", "NO2": "High"}, ("C6H6", "High")))
+    fis.add_rule(FuzzyRule({"CO": "High", "NO2": "Low"}, ("C6H6", "Medium")))
+    fis.add_rule(FuzzyRule({"CO": "High", "NO2": "Medium"}, ("C6H6", "High")))
+    fis.add_rule(FuzzyRule({"CO": "High", "NO2": "High"}, ("C6H6", "High")))
     
     return fis
 
 
 def visualize_membership_functions(fis: MamdaniFIS, save_path: str = None):
-    """
-    Visualize all membership functions.
-    
-    Parameters:
-    -----------
-    fis : MamdaniFIS
-        The fuzzy inference system
-    save_path : str
-        Path to save the figure (optional)
-    """
+    """Visualize membership functions."""
     import matplotlib.pyplot as plt
     
     n_vars = len(fis.input_variables) + 1
@@ -510,32 +261,26 @@ def visualize_membership_functions(fis: MamdaniFIS, save_path: str = None):
     if n_vars == 1:
         axes = [axes]
     
-    # Plot input variables
     for idx, (name, var) in enumerate(fis.input_variables.items()):
         ax = axes[idx]
         x = np.linspace(var.universe[0], var.universe[1], 500)
-        
         for label, mf in var.mfs.items():
             ax.plot(x, mf(x), label=label, linewidth=2)
-        
         ax.set_title(f'Input: {name}', fontsize=12, fontweight='bold')
         ax.set_xlabel(name)
-        ax.set_ylabel('Membership Degree')
+        ax.set_ylabel('Membership')
         ax.legend()
         ax.grid(True, alpha=0.3)
         ax.set_ylim(-0.05, 1.1)
     
-    # Plot output variable
     ax = axes[-1]
     var = fis.output_variable
     x = np.linspace(var.universe[0], var.universe[1], 500)
-    
     for label, mf in var.mfs.items():
         ax.plot(x, mf(x), label=label, linewidth=2)
-    
     ax.set_title(f'Output: {var.name}', fontsize=12, fontweight='bold')
     ax.set_xlabel(var.name)
-    ax.set_ylabel('Membership Degree')
+    ax.set_ylabel('Membership')
     ax.legend()
     ax.grid(True, alpha=0.3)
     ax.set_ylim(-0.05, 1.1)
@@ -549,63 +294,45 @@ def visualize_membership_functions(fis: MamdaniFIS, save_path: str = None):
     return fig
 
 
-def visualize_rule_surface(fis: MamdaniFIS, resolution: int = 50, 
-                          save_path: str = None):
-    """
-    Visualize the FIS control surface (3D plot).
-    
-    Parameters:
-    -----------
-    fis : MamdaniFIS
-        The fuzzy inference system
-    resolution : int
-        Grid resolution
-    save_path : str
-        Path to save the figure (optional)
-    """
+def visualize_rule_surface(fis: MamdaniFIS, resolution: int = 50, save_path: str = None):
+    """Visualize FIS control surface."""
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     
-    # Get input variable names and ranges
     var_names = list(fis.input_variables.keys())
     if len(var_names) < 2:
-        print("Need at least 2 input variables for surface plot")
+        print("Need at least 2 input variables")
         return None
     
     var1, var2 = var_names[0], var_names[1]
     range1 = fis.input_variables[var1].universe
     range2 = fis.input_variables[var2].universe
     
-    # Create meshgrid
     x1 = np.linspace(range1[0], range1[1], resolution)
     x2 = np.linspace(range2[0], range2[1], resolution)
     X1, X2 = np.meshgrid(x1, x2)
     
-    # Compute output surface
     Z = np.zeros_like(X1)
     for i in range(resolution):
         for j in range(resolution):
             inputs = {var1: X1[i, j], var2: X2[i, j]}
             Z[i, j], _ = fis.infer(inputs, resolution=200)
     
-    # Create 3D plot
     fig = plt.figure(figsize=(12, 5))
     
-    # Surface plot
     ax1 = fig.add_subplot(121, projection='3d')
     surf = ax1.plot_surface(X1, X2, Z, cmap='viridis', alpha=0.8)
     ax1.set_xlabel(var1)
     ax1.set_ylabel(var2)
     ax1.set_zlabel(fis.output_variable.name)
-    ax1.set_title('Fuzzy Control Surface', fontweight='bold')
+    ax1.set_title('Control Surface', fontweight='bold')
     fig.colorbar(surf, ax=ax1, shrink=0.5)
     
-    # Contour plot
     ax2 = fig.add_subplot(122)
     contour = ax2.contourf(X1, X2, Z, levels=20, cmap='viridis')
     ax2.set_xlabel(var1)
     ax2.set_ylabel(var2)
-    ax2.set_title('Control Surface Contour', fontweight='bold')
+    ax2.set_title('Contour', fontweight='bold')
     fig.colorbar(contour, ax=ax2)
     
     plt.tight_layout()
@@ -616,29 +343,20 @@ def visualize_rule_surface(fis: MamdaniFIS, resolution: int = 50,
     return fig
 
 
-# =============================================================================
-# Example usage
-# =============================================================================
 if __name__ == "__main__":
     print("Testing Fuzzy Inference System...")
     
-    # Create FIS
     fis = create_air_quality_fis()
-    
-    # Print summary
     print(fis.summary())
     
-    # Test inference
     test_inputs = [
-        {"CO": 2.0, "NO2": 100.0},   # Low-ish values
-        {"CO": 5.0, "NO2": 175.0},   # Medium values
-        {"CO": 10.0, "NO2": 300.0},  # High values
+        {"CO": 2.0, "NO2": 100.0},
+        {"CO": 5.0, "NO2": 175.0},
+        {"CO": 10.0, "NO2": 300.0},
     ]
     
     print("\nTest Inferences:")
     print("-" * 40)
     for inputs in test_inputs:
-        output, details = fis.infer(inputs)
-        print(f"Inputs: {inputs}")
-        print(f"Output C6H6: {output:.2f} µg/m³")
-        print()
+        output, _ = fis.infer(inputs)
+        print(f"Inputs: {inputs} -> C6H6: {output:.2f}")

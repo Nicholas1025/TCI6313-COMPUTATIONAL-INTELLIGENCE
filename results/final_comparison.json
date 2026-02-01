@@ -1,0 +1,87 @@
+{
+  "comparison_table": [
+    {
+      "Model": "ANN Baseline",
+      "RMSE": 0.8023925405564941,
+      "MAE": 0.5914119205886511,
+      "R\u00b2": 0.990040682810647,
+      "Training Time (s)": 27.51382613182068
+    },
+    {
+      "Model": "GA-ANN (Hybrid)",
+      "RMSE": 1.0231611956459592,
+      "MAE": 0.6608230583959347,
+      "R\u00b2": 0.9838063808719575,
+      "Training Time (s)": 2357.2302091121674
+    },
+    {
+      "Model": "Fuzzy FIS",
+      "RMSE": 4.026600032320199,
+      "MAE": 2.920538414273531,
+      "R\u00b2": 0.7485357767895224,
+      "Training Time (s)": 0.04891014099121094
+    },
+    {
+      "Model": "LSTM",
+      "RMSE": 5.714050372922386,
+      "MAE": 4.07321017306784,
+      "R\u00b2": 0.4812637423167725,
+      "Training Time (s)": 81.10074543952942
+    }
+  ],
+  "summary_table": [
+    {
+      "Model": "ANN Baseline",
+      "Type": "Feedforward NN",
+      "CI Paradigm": "Neural Networks",
+      "Architecture": "[64, 32]",
+      "RMSE": "0.8024",
+      "MAE": "0.5914",
+      "R\u00b2": "0.9900",
+      "Time (s)": "27.5"
+    },
+    {
+      "Model": "LSTM",
+      "Type": "Recurrent NN",
+      "CI Paradigm": "Deep Neural Networks",
+      "Architecture": "LSTM[128, 64]",
+      "RMSE": "5.7141",
+      "MAE": "4.0732",
+      "R\u00b2": "0.4813",
+      "Time (s)": "81.1"
+    },
+    {
+      "Model": "GA-ANN",
+      "Type": "Hybrid",
+      "CI Paradigm": "EC + NN",
+      "Architecture": "[104, 49]",
+      "RMSE": "1.0232",
+      "MAE": "0.6608",
+      "R\u00b2": "0.9838",
+      "Time (s)": "2357.2"
+    },
+    {
+      "Model": "Fuzzy FIS",
+      "Type": "Rule-Based",
+      "CI Paradigm": "Fuzzy Systems",
+      "Architecture": "9 Rules (CO(GT), NO2(GT))",
+      "RMSE": "4.0266",
+      "MAE": "2.9205",
+      "R\u00b2": "0.7485",
+      "Time (s)": "0.05"
+    }
+  ],
+  "best_model": {
+    "Model": "ANN Baseline",
+    "RMSE": 0.8023925405564941,
+    "MAE": 0.5914119205886511,
+    "R\u00b2": 0.990040682810647,
+    "Training Time (s)": 27.51382613182068
+  },
+  "ci_paradigms_covered": [
+    "Neural Networks (ANN)",
+    "Deep Neural Networks (LSTM)",
+    "Evolutionary Computation (GA-ANN)",
+    "Fuzzy Systems (FIS)"
+  ]
+}

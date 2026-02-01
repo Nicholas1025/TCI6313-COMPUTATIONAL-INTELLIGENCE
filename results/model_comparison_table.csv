@@ -1,0 +1,5 @@
+Model,Type,CI Paradigm,Architecture,RMSE,MAE,R²,Time (s)
+ANN Baseline,Feedforward NN,Neural Networks,"[64, 32]",0.8024,0.5914,0.9900,27.5
+LSTM,Recurrent NN,Deep Neural Networks,"LSTM[128, 64]",5.7141,4.0732,0.4813,81.1
+GA-ANN,Hybrid,EC + NN,"[104, 49]",1.0232,0.6608,0.9838,2357.2
+Fuzzy FIS,Rule-Based,Fuzzy Systems,"9 Rules (CO(GT), NO2(GT))",4.0266,2.9205,0.7485,0.05
